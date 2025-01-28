@@ -140,9 +140,23 @@ export type UserDataType = {
   image?: any;
 };
 
+// export type AuthContextType = {
+//   user: UserType;
+//   setUser: Function;
+//   login: (
+//     email: string,
+//     password: string
+//   ) => Promise<{ success: boolean; msg?: string }>;
+//   register: (
+//     email: string,
+//     password: string,
+//     name: string
+//   ) => Promise<{ success: boolean; msg?: string }>;
+//   updateUserData: (userId: string) => Promise<void>;
+// };
 export type AuthContextType = {
-  user: UserType;
-  setUser: Function;
+  user: UserType; // UserType can be null if the user isn't logged in
+  setUser: React.Dispatch<React.SetStateAction<UserType | null>>; // Update this to be strongly typed
   login: (
     email: string,
     password: string
