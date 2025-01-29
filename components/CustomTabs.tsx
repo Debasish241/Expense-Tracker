@@ -5,14 +5,46 @@ import {
   BottomTabBarProps,
   createBottomTabNavigator,
 } from "@react-navigation/bottom-tabs";
-import { colors } from "@/constants/theme";
+import { colors, spacingY } from "@/constants/theme";
 import { verticalScale } from "@/utils/styling";
+import * as Icons from "phosphor-react-native";
 
 export default function CustomTabs({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps) {
+  const tabBarIcons: any = {
+    index: (isFocused: boolean) => (
+      <Icons.House
+        size={verticalScale(30)}
+        weight={isFocused ? "fill" : "regular"}
+        color={isFocused ? colors.primary : colors.neutral400}
+      />
+    ),
+    statistics: (isFocused: boolean) => (
+      <Icons.ChartBar
+        size={verticalScale(30)}
+        weight={isFocused ? "fill" : "regular"}
+        color={isFocused ? colors.primary : colors.neutral400}
+      />
+    ),
+    wallet: (isFocused: boolean) => (
+      <Icons.Wallet
+        size={verticalScale(30)}
+        weight={isFocused ? "fill" : "regular"}
+        color={isFocused ? colors.primary : colors.neutral400}
+      />
+    ),
+    profile: (isFocused: boolean) => (
+      <Icons.User
+        size={verticalScale(30)}
+        weight={isFocused ? "fill" : "regular"}
+        color={isFocused ? colors.primary : colors.neutral400}
+      />
+    ),
+  };
+
   return (
     <View style={styles.tabBar}>
       {state.routes.map((route, index) => {
@@ -56,11 +88,7 @@ export default function CustomTabs({
             onLongPress={onLongPress}
             style={styles.tabBarItem}
           >
-            <Text
-              style={{ color: isFocused ? colors.primary : colors.neutral800 }}
-            >
-              {label}
-            </Text>
+            {tabBarIcons[route.name] && tabBarIcons[route.name](isFocused)}
           </TouchableOpacity>
         );
       })}
@@ -73,11 +101,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: "100%",
     height: Platform.OS === "ios" ? verticalScale(73) : verticalScale(55),
-    backgroundColor: "space-around",
+    backgroundColor: colors.neutral800,
+    justifyContent: "space-around",
     alignItems: "center",
+    color: "black",
     borderTopColor: colors.neutral700,
+    borderTopWidth: 1,
   },
   tabBarItem: {
-  //  marginBottom:Platform
+    marginBottom: Platform.OS === "ios" ? spacingY._10 : spacingY._5,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
