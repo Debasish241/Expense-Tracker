@@ -46,9 +46,6 @@
 //   return require("../assets/images/defaultAvatar.png");
 // };
 
-
-
-
 import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from "@/constants";
 import { ResponseType } from "@/Types";
 import axios from "axios";
@@ -96,4 +93,11 @@ export const getProfileImage = (file: any) => {
   if (typeof file === "object") return file;
 
   return require("../assets/images/defaultAvatar.png");
+};
+export const getFilePath = (file: any) => {
+  if (typeof file === "string") return file;
+  if (typeof file === "object") return file;
+
+  // return require("../assets/images/defaultAvatar.png");
+  return null;
 };
