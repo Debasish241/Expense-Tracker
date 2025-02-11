@@ -8,6 +8,7 @@ import { FlashList } from "@shopify/flash-list";
 import Loading from "./Loading";
 import { expenseCategories, incomeCategory } from "@/constants/data";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { Timestamp } from "firebase/firestore";
 const TransactionList = ({
   data,
   title,
@@ -58,8 +59,16 @@ const TransactionItem = ({
   index,
   handleClick,
 }: TransactionItemProps) => {
-  let category = expenseCategories["entertainment"];
+  console.log("item.description", item?.description);
+  let category =
+    item?.type == "income" ? incomeCategory : expenseCategories[item.category!];
   const IconComponet = category.icon;
+  const date = (item?.date as Timestamp)
+    ?.toDate()
+    ?.toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+    });
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 70)
@@ -83,17 +92,19 @@ const TransactionItem = ({
             textProps={{ numberOfLines: 1 }}
             color={colors.neutral400}
           >
-            {/* {item?.description} */}
-            padsd
+            {item?.description}
           </Typo>
         </View>
 
         <View style={styles.amountDate}>
-          <Typo fontWeight={"500"} color={colors.primary}>
-            +₹23
+          <Typo
+            fontWeight={"500"}
+            color={item?.type == "income" ? colors.primary : colors.rose}
+          >
+            {`${item?.type == "income" ? "+₹" : "-₹"}${item?.amount}`}
           </Typo>
           <Typo fontWeight={"500"} color={colors.neutral400}>
-            12th Jan
+            {date}
           </Typo>
         </View>
       </TouchableOpacity>

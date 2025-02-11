@@ -35,6 +35,7 @@ import { orderBy, where } from "firebase/firestore";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { createOrUpdateTransaction } from "@/services/transactionService";
 
 const TransactionModal = () => {
   const { user } = useAuth();
@@ -81,7 +82,7 @@ const TransactionModal = () => {
       return;
     }
 
-    console.log("good to go");
+    // console.log("good to go");
     let transactionData: TransactionType = {
       type,
       amount,
@@ -92,7 +93,17 @@ const TransactionModal = () => {
       image,
       uid: user?.uid,
     };
-    console.log(transactionData, "transaction Data");
+    // console.log(transactionData, "transaction Data");
+
+    setLoading(true);
+    const res = await createOrUpdateTransaction(transactionData);
+
+    setLoading(false);
+    if (res.success) {
+      router.back();
+    } else {
+      Alert.alert("Transaction", res.msg);
+    }
   };
 
   const onDelete = async () => {
