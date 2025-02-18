@@ -34,7 +34,6 @@ const HomeCard = () => {
       }
     );
   };
-
   return (
     <ImageBackground
       source={require("../assets/images/card.png")}
