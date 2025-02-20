@@ -5,11 +5,19 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
+  orderBy,
+  query,
   setDoc,
+  Timestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { uploadFileToCloudinary } from "./imageServices";
 import { createOrUpdateWallet } from "./walletService";
+import { getLast12Months, getLast7Days, getYearsRange } from "@/utils/common";
+import { scale } from "@/utils/styling";
+import { colors } from "@/constants/theme";
 
 export const createOrUpdateTransaction = async (
   transactionData: Partial<TransactionType>
@@ -244,6 +252,209 @@ export const deleteTransaction = async (
     return { success: true };
   } catch (error: any) {
     console.log(error, "error updating the wallet for new transaction");
+    return { success: false, msg: error.message };
+  }
+};
+
+export const fetchWeeklyStats = async (uid: string): Promise<ResponseType> => {
+  try {
+    const db = firestore;
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const transactionQuery = query(
+      collection(db, "transactions"),
+      where("uid", "==", uid),
+      where("date", ">=", Timestamp.fromDate(sevenDaysAgo)),
+      where("date", "<=", Timestamp.fromDate(today)),
+      orderBy("date", "desc"),
+      where("uid", "==", uid)
+    );
+
+    const querySnapShot = await getDocs(transactionQuery);
+    const weeklyData = getLast7Days();
+    const transactions: TransactionType[] = [];
+
+    querySnapShot.forEach((doc) => {
+      const transaction = doc.data() as TransactionType;
+      transaction.id = doc.id;
+      transactions.push(transaction);
+
+      const transactionDate = (transaction.date as Timestamp)
+        .toDate()
+        .toISOString()
+        .split("T")[0];
+
+      const dayData = weeklyData.find((day) => day.date == transactionDate);
+
+      if (dayData) {
+        if (transaction.type == "income") {
+          dayData.income += transaction.amount;
+        } else if (transaction.type == "expense") {
+          dayData.expense += transaction.amount;
+        }
+      }
+    });
+
+    const stats = weeklyData.flatMap((day) => [
+      {
+        value: day.income,
+        label: day.day,
+        spacing: scale(5),
+        labelWidth: scale(30),
+        frontColor: colors.primary,
+      },
+
+      { value: day.expense, frontColor: colors.rose },
+    ]);
+
+    return {
+      success: true,
+      data: {
+        stats,
+        transactions,
+      },
+    };
+  } catch (error: any) {
+    console.log(error, "error fetching weekly stats");
+    return { success: false, msg: error.message };
+  }
+};
+
+export const fetchMonthlyStats = async (uid: string): Promise<ResponseType> => {
+  try {
+    const db = firestore;
+    const today = new Date();
+    const twelveMonthsAgo = new Date(today);
+    twelveMonthsAgo.setDate(twelveMonthsAgo.getDate() - 12);
+
+    const transactionQuery = query(
+      collection(db, "transactions"),
+      where("uid", "==", uid),
+      where("date", ">=", Timestamp.fromDate(twelveMonthsAgo)),
+      where("date", "<=", Timestamp.fromDate(today)),
+      orderBy("date", "desc"),
+      where("uid", "==", uid)
+    );
+
+    const querySnapShot = await getDocs(transactionQuery);
+    const monthlyData = getLast12Months();
+    const transactions: TransactionType[] = [];
+
+    querySnapShot.forEach((doc) => {
+      const transaction = doc.data() as TransactionType;
+      transaction.id = doc.id;
+      transactions.push(transaction);
+
+      const transactionDate = (transaction.date as Timestamp).toDate();
+      const monthName = transactionDate.toLocaleString("default", {
+        month: "short",
+      });
+      const shortYear = transactionDate.getFullYear().toString().slice(-2);
+      const monthData = monthlyData.find(
+        (month) => month.month === `${monthName} ${shortYear}`
+      );
+
+      if (monthData) {
+        if (transaction.type == "income") {
+          monthData.income += transaction.amount;
+        } else if (transaction.type == "expense") {
+          monthData.expense += transaction.amount;
+        }
+      }
+    });
+
+    const stats = monthlyData.flatMap((month) => [
+      {
+        value: month.income,
+        label: month.month,
+        spacing: scale(5),
+        labelWidth: scale(35),
+        frontColor: colors.primary,
+      },
+
+      { value: month.expense, frontColor: colors.rose },
+    ]);
+
+    return {
+      success: true,
+      data: {
+        stats,
+        transactions,
+      },
+    };
+  } catch (error: any) {
+    console.log(error, "error fetching weekly stats");
+    return { success: false, msg: error.message };
+  }
+};
+
+export const fetchYearlyStats = async (uid: string): Promise<ResponseType> => {
+  try {
+    const db = firestore;
+
+    const transactionQuery = query(
+      collection(db, "transactions"),
+      where("uid", "==", uid),
+      orderBy("date", "desc")
+    );
+
+    const querySnapShot = await getDocs(transactionQuery);
+    const transactions: TransactionType[] = [];
+
+    const firstTransaction = querySnapShot.docs.reduce((earliest, doc) => {
+      const transactionDate = doc.data().date.toDate();
+      return transactionDate < earliest ? transactionDate : earliest;
+    }, new Date());
+
+    const firstYear = firstTransaction.getFullYear();
+    const currentYear = new Date().getFullYear();
+    const yearlyData = getYearsRange(firstYear, currentYear);
+
+    querySnapShot.forEach((doc) => {
+      const transaction = doc.data() as TransactionType;
+      transaction.id = doc.id;
+      transactions.push(transaction);
+
+      const transactionYear = (transaction.date as Timestamp)
+        .toDate()
+        .getFullYear();
+
+      const yearData = yearlyData.find(
+        (item: any) => item.year === transactionYear.toString()
+      );
+
+      if (yearData) {
+        if (transaction.type == "income") {
+          yearData.income += transaction.amount;
+        } else if (transaction.type == "expense") {
+          yearData.expense += transaction.amount;
+        }
+      }
+    });
+
+    const stats = yearlyData.flatMap((year: any) => [
+      {
+        value: year.income,
+        label: year.year,
+        spacing: scale(5),
+        labelWidth: scale(30),
+        frontColor: colors.primary,
+      },
+
+      { value: year.expense, frontColor: colors.rose },
+    ]);
+
+    return {
+      success: true,
+      data: {
+        stats,
+        transactions,
+      },
+    };
+  } catch (error: any) {
+    console.log(error, "error fetching weekly stats");
     return { success: false, msg: error.message };
   }
 };
