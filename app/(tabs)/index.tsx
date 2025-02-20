@@ -37,6 +37,7 @@ const Home = () => {
     error,
     loading: transactiononsLoading,
   } = useFetchData<TransactionType>("transactions", constraints);
+  
   return (
     <ScreenWrapper>
       <View style={styles.container}>
